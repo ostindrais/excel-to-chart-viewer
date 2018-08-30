@@ -39,9 +39,11 @@ var colorOptions = [
     '#ffc107',
     '#009688'
 ];
+const arraySum = (accumulator, currentValue) => parseInt(accumulator) + parseInt(currentValue);
+
 function makeChart() {
     var ctx = document.getElementById('canvas-chart').getContext('2d');
-    chartObject = new Chart(ctx, {
+    let createdChart = new Chart(ctx, {
     // The type of chart we want to create
     type: 'pie',
 
@@ -49,9 +51,9 @@ function makeChart() {
     data: {
         labels: ["Data", "Label", "Start", "Rolling", "Laravel", "ChartJS", "jQuery", "Javascript", "Filler"],
         datasets: [{
-            label: "Load Excel Data",
             backgroundColor: colorOptions,
             borderColor: '#000000',
+            borderWidth: 0,
             data: [0, 10, 5, 2, 20, 30, 45, 29, 10],
         }]
     },
@@ -61,12 +63,24 @@ function makeChart() {
         title: {
             display: true,
             text: "Excel Data"
+        },
+        tooltips: {
+            callbacks: {
+                label: function (tooltipItem, data) {
+                    var thisLabel = data.labels[tooltipItem.index] || '';
+                    var thisValue = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                    var totalValue = data.datasets[tooltipItem.datasetIndex].data.reduce(arraySum);
+                    var percentage = (thisValue / totalValue) * 100;
+                    return thisLabel + ': ' + thisValue + ' (' + percentage.toFixed(2) + '%)';
+                }
+            }
         }
     }
-});
+    });
+    return createdChart;
 }
 
-var chartObject = makeChart();
+const chartObject = makeChart();
 
 function handleFiles(files) {
   var f = files[0];
@@ -96,8 +110,12 @@ function handleFiles(files) {
     // now get the data
     var worksheet = workbook.Sheets['data'];
     var dataAsJson = XLSX.utils.sheet_to_json(worksheet);
+    console.log(XLSX.utils.sheet_to_html(worksheet, {
+        id: 'xls-data',
+        header: '',
+        footer: ''
+    }));
     makeChartFromData(chartObject, worksheetTitle, dataAsJson);
-    /* DO SOMETHING WITH workbook HERE */
   };
   if(rABS) reader.readAsBinaryString(f); else reader.readAsArrayBuffer(f);
 }
@@ -108,12 +126,10 @@ function preventDefaults (e) {
 }
 
 function highlight(e) {
-    let dropArea = document.getElementById('drop-area');
   dropArea.classList.add('highlight')
 }
 
 function unhighlight(e) {
-    let dropArea = document.getElementById('drop-area');
   dropArea.classList.remove('highlight')
 }
 
@@ -131,9 +147,11 @@ function makeChartFromData(chartObject, chartTitle, data) {
         dataLabels.push(dataRow["Name "]);
         dataValues.push(dataRow.Count);
     });
+    let dataSet = chartObject.data.datasets.pop();
+    dataSet.data = dataValues;
+    chartObject.data.datasets.push(dataSet);
     chartObject.config.options.title.text = chartTitle;
-    chartObject.config.data.datasets[0].data = dataValues;
-    chartObject.config.data.labels = dataLabels;
+    chartObject.data.labels = dataLabels;
     chartObject.update();
 };
 
@@ -151,7 +169,6 @@ dropArea.addEventListener(eventName, highlight, false);
 dropArea.addEventListener(eventName, unhighlight, false)
 })
 dropArea.addEventListener('drop', handleDrop, false);
-makeChart();
 
 </script>
 @endsection
