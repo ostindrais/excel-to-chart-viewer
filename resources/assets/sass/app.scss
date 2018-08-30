@@ -7,3 +7,26 @@
 
 // Bootstrap
 @import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
+
+#drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 20px;
+    width: 480px;
+    font-family: sans-serif;
+    margin: 100px auto;
+    padding: 20px;
+}
+#drop-area.highlight {
+    border-color: purple;
+}
+
+#file-upload {
+    display: none;
+}
+
+#canvas-container {
+    position: relative;
+    margin: 100px auto;
+    height: 30vh;
+    width: 30vw;
+}
