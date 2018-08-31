@@ -83,7 +83,7 @@
                 </div>
 
                 <div class="links">
-                    <a href="https://github.com/ostindrais/excel-to-chart-viewer">GitHub</a>
+                    <a href="https://github.com/ostindrais/excel-to-chart-viewer">Source code (GitHub)</a>
                 </div>
             </div>
         </div>
