@@ -21,6 +21,7 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
 <script type="text/javascript">
 /*
     Taken from https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
@@ -39,6 +40,7 @@ var colorOptions = [
     '#ffc107',
     '#009688'
 ];
+var theHelp = Chart.helpers;
 const arraySum = (accumulator, currentValue) => parseInt(accumulator) + parseInt(currentValue);
 
 function makeChart() {
@@ -49,7 +51,7 @@ function makeChart() {
 
     // The data for our dataset
     data: {
-        labels: ["Data", "Label", "Start", "Rolling", "Laravel", "ChartJS", "jQuery", "Javascript", "Filler"],
+        labels: ["Data", "CSS", "HTML", "Laravel", "Javascript", "ChartJS", "A2 Hosting", "A2 Hosting Again", "XLS Parsing"],
         datasets: [{
             backgroundColor: colorOptions,
             borderColor: '#000000',
@@ -62,7 +64,7 @@ function makeChart() {
     options: {
         title: {
             display: true,
-            text: "Excel Data"
+            text: "Time Sinks on This Project"
         },
         tooltips: {
             callbacks: {
@@ -74,8 +76,43 @@ function makeChart() {
                     return thisLabel + ': ' + thisValue + ' (' + percentage.toFixed(2) + '%)';
                 }
             }
+        },
+        legend: {
+            display: true,
+            labels: {
+                generateLabels: function (chart) {
+                    var data = chart.data;
+        if (data.labels.length && data.datasets.length) {
+          return data.labels.map(function(label, i) {
+            var meta = chart.getDatasetMeta(0);
+            var ds = data.datasets[0];
+            var arc = meta.data[i];
+            var custom = arc && arc.custom || {};
+            var getValueAtIndexOrDefault = theHelp.getValueAtIndexOrDefault;
+            var arcOpts = chart.options.elements.arc;
+            var fill = custom.backgroundColor ? custom.backgroundColor : getValueAtIndexOrDefault(ds.backgroundColor, i, arcOpts.backgroundColor);
+            var stroke = custom.borderColor ? custom.borderColor : getValueAtIndexOrDefault(ds.borderColor, i, arcOpts.borderColor);
+            var bw = custom.borderWidth ? custom.borderWidth : getValueAtIndexOrDefault(ds.borderWidth, i, arcOpts.borderWidth);
+            var thisValue = ds.data[i];
+            var totalValue = ds.data.reduce(arraySum);
+            var percentage = (thisValue / totalValue) * 100;
+
+              return {
+              // And finally : 
+              text: label + " " + percentage.toFixed(2) + '%',
+              fillStyle: fill,
+              strokeStyle: stroke,
+              lineWidth: bw,
+              hidden: isNaN(ds.data[i]) || meta.data[i].hidden,
+              index: i
+            };
+          });
         }
+        return [];
+      }
     }
+  }                    
+}
     });
     return createdChart;
 }
@@ -100,7 +137,7 @@ function handleFiles(files) {
         errors.push("Second worksheet must be named 'data'");
     }
     if (errors.length > 0) {
-        alert(errors.join("\n"));
+        bootbox.alert(errors.join("<br />"));
         return;
     }
     // Get the chart title
@@ -110,11 +147,6 @@ function handleFiles(files) {
     // now get the data
     var worksheet = workbook.Sheets['data'];
     var dataAsJson = XLSX.utils.sheet_to_json(worksheet);
-    console.log(XLSX.utils.sheet_to_html(worksheet, {
-        id: 'xls-data',
-        header: '',
-        footer: ''
-    }));
     makeChartFromData(chartObject, worksheetTitle, dataAsJson);
   };
   if(rABS) reader.readAsBinaryString(f); else reader.readAsArrayBuffer(f);
@@ -140,13 +172,31 @@ function handleDrop(e) {
   handleFiles(files)
 }
 
+function showErrors(errorMessages) {
+    bootbox.alert(errorMessages.join("<br />"));
+}
+
 function makeChartFromData(chartObject, chartTitle, data) {
     let dataLabels = [];
     let dataValues = [];
-    data.forEach(dataRow => {
+    let errors = [];
+    data.some(dataRow => {
+        if (typeof dataRow["Name "] === 'undefined') {
+            errors.push("Column Name is missing");
+        }
+        if (typeof dataRow.Count === 'undefined') {
+            errors.push("Column Count is missing");
+        }
+        if (errors.length > 0) {
+            showErrors(errors);
+            return true;
+        }
         dataLabels.push(dataRow["Name "]);
         dataValues.push(dataRow.Count);
     });
+    if (errors.length > 0) {
+        return;
+    }
     let dataSet = chartObject.data.datasets.pop();
     dataSet.data = dataValues;
     chartObject.data.datasets.push(dataSet);
